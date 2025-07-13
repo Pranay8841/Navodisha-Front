@@ -124,7 +124,7 @@ function App() {
       citiesArray.forEach(city => params.append('cities', city));
 
 
-      const response = await apiConnector('GET', `/api/colleges?${params.toString()}`);
+      const response = await apiConnector('GET', `https://navodisha-backend.vercel.app/api/colleges?${params.toString()}`);
       if (response.status !== 200) throw new Error('Failed to fetch colleges');
       setResults(response.data);
     } catch (err) {
