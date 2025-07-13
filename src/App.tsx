@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Search, MapPin, BookOpen, Loader2, AlertCircle, TrendingUp, Award, Users, Filter } from 'lucide-react';
 import Logo from './assets/IMG-20240521-WA0022.jpg'
+import { apiConnector } from './axios/apiConnector';
 
 interface College {
   college: string;
@@ -122,10 +123,10 @@ function App() {
         .filter(Boolean);
       citiesArray.forEach(city => params.append('cities', city));
 
-      const response = await fetch(`/api/colleges?${params.toString()}`);
-      if (!response.ok) throw new Error('Failed to fetch colleges');
-      const data = await response.json();
-      setResults(data);
+
+      const response = await apiConnector('GET', `/api/colleges?${params.toString()}`);
+      if (response.status !== 200) throw new Error('Failed to fetch colleges');
+      setResults(response.data);
     } catch (err) {
       setError('Failed to search colleges. Please try again.');
       console.error('Search error:', err);
