@@ -84,7 +84,7 @@ const mapToTechnicalCategories = (category: string, courseType: string): string[
 
 function App() {
   const [form, setForm] = useState<SearchForm>({
-    searchMethod: 'rank',
+    searchMethod: 'percentile',
     rank: '',
     percentile: '',
     category: '',
@@ -99,7 +99,7 @@ function App() {
   const handleInputChange = (field: keyof SearchForm, value: string) => {
     if (field === 'courseType') {
       setForm({
-        searchMethod: 'rank',
+        searchMethod: 'percentile',
         rank: '',
         percentile: '',
         category: '',
