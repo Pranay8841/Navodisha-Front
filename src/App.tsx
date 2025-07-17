@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { Search, MapPin, BookOpen, Loader2, AlertCircle, TrendingUp, Award, Users, Filter } from 'lucide-react';
-import Logo from './assets/IMG-20240521-WA0022.jpg'
+import Logo from './assets/IMG-20240521-WA0022-removebg-preview.png'
 import { apiConnector } from './axios/apiConnector';
 
 interface College {
   college: string;
   branch: string;
+  status: string; // Added status for nursing
 }
 
 interface SearchForm {
@@ -14,7 +15,7 @@ interface SearchForm {
   percentile: string;
   category: string;
   cities: string; // comma-separated city list
-  courseType: 'engineering' | 'pharmacy';
+  courseType: 'engineering' | 'pharmacy' | 'nursing'; // Added courseType
 }
 
 const simplifiedCategories = [
@@ -36,8 +37,8 @@ const simplifiedCategories = [
   { value: 'Others', label: 'Others', color: 'bg-white/30' }
 ];
 
-const mapToTechnicalCategories = (category: string): string[] => {
-  const mapping: { [key: string]: string[] } = {
+const mapToTechnicalCategories = (category: string, courseType: string): string[] => {
+  const defaultMap: { [key: string]: string[] } = {
     Open: ['GOPENS', 'GOPENO', 'GOPENH'],
     Ladies: ['LOPENS', 'LOPENO', 'LOPENH'],
     OBC: ['GOBCS', 'LOBCS', 'DEFOBCS', 'DEFROBCS'],
@@ -55,8 +56,30 @@ const mapToTechnicalCategories = (category: string): string[] => {
     Minority: ['MI'],
     Others: []
   };
-  return mapping[category] || [];
+
+  const nursingMap: { [key: string]: string[] } = {
+    SC: ['SC'],
+    ST: ['ST'],
+    'VJ-A': ['VJ-A'],
+    'NT-B': ['NT-B'],
+    'NT-C': ['NT-C'],
+    'NT-D': ['NT-D'],
+    OBC: ['OBC'],
+    SEBC: ['SEBC'],
+    EWS: ['EWS'],
+    OPEN: ['OPEN'],
+    D1: ['D1'],
+    D2: ['D2'],
+    ORPHEN: ['ORPHEN'],
+    PH: ['PH'],
+    Others: []
+  };
+
+  return courseType === 'nursing'
+    ? nursingMap[category] || []
+    : defaultMap[category] || [];
 };
+
 
 
 function App() {
@@ -74,7 +97,20 @@ function App() {
   const [hasSearched, setHasSearched] = useState(false);
 
   const handleInputChange = (field: keyof SearchForm, value: string) => {
-    setForm(prev => ({ ...prev, [field]: value }));
+    if (field === 'courseType') {
+      setForm({
+        searchMethod: 'rank',
+        rank: '',
+        percentile: '',
+        category: '',
+        cities: '',
+        courseType: value as 'engineering' | 'pharmacy' | 'nursing'
+      });
+      setResults([]);         // Clear previous results
+      setHasSearched(false);  // Reset search state
+    } else {
+      setForm(prev => ({ ...prev, [field]: value }));
+    }
     setError(null);
   };
 
@@ -99,6 +135,35 @@ function App() {
     return true;
   };
 
+  const getCategoryOptions = (courseType: string) => {
+    if (courseType === 'nursing') {
+      // Nursing categories from nursingMap
+      return Object.keys({
+        SC: ['SC'],
+        ST: ['ST'],
+        'VJ-A': ['VJ-A'],
+        'NT-B': ['NT-B'],
+        'NT-C': ['NT-C'],
+        'NT-D': ['NT-D'],
+        OBC: ['OBC'],
+        SEBC: ['SEBC'],
+        EWS: ['EWS'],
+        OPEN: ['OPEN'],
+        D1: ['D1'],
+        D2: ['D2'],
+        ORPHEN: ['ORPHEN'],
+        PH: ['PH'],
+        Others: []
+      }).map(key => ({
+        value: key,
+        label: key,
+        color: 'bg-blue-500' // You can customize colors per category if needed
+      }));
+    }
+    // Default categories
+    return simplifiedCategories;
+  };
+
   const handleSearch = async () => {
     if (!validateForm()) return;
 
@@ -107,7 +172,7 @@ function App() {
     setHasSearched(true);
 
     try {
-      const technicalCategories = mapToTechnicalCategories(form.category);
+      const technicalCategories = mapToTechnicalCategories(form.category, form.courseType);
       const params = new URLSearchParams({
         ...(form.searchMethod === 'rank'
           ? { rank: form.rank }
@@ -155,15 +220,15 @@ function App() {
             <div className="flex items-center space-x-4">
               <div className="relative">
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-500 rounded-xl blur opacity-75"></div>
-                <div className="relative p-3 bg-white rounded-xl">
-                  <img src={Logo} className="h-8 w-8 text-purple-600" />
+                <div className="relative rounded-xl bg-white flex items-center justify-center shadow-lg">
+                  <img src={Logo} alt="Navodisha Logo" className="h-12 w-12 object-contain rounded-lg" />
                 </div>
               </div>
               <div>
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent">
-                  Navodisha College Search
+                  Navodisha
                 </h1>
-                <p className="text-purple-200 font-medium">Discover Your Future</p>
+                <p className="text-purple-200 font-medium">College Searching - Discover Your Future</p>
               </div>
             </div>
             <div className="hidden md:flex items-center space-x-6 text-white/80">
@@ -197,7 +262,7 @@ function App() {
                 <label className="block text-sm font-semibold text-purple-200 mb-4">
                   Course Type
                 </label>
-                <div className="bg-white/5 rounded-xl p-1 grid grid-cols-2 gap-1">
+                <div className="bg-white/5 rounded-xl p-1 grid grid-cols-3 gap-1">
                   <button
                     onClick={() => handleInputChange('courseType', 'engineering')}
                     className={`px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${form.courseType === 'engineering'
@@ -216,7 +281,17 @@ function App() {
                   >
                     Pharmacy
                   </button>
+                  <button
+                    onClick={() => handleInputChange('courseType', 'nursing')}
+                    className={`px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${form.courseType === 'nursing'
+                      ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg'
+                      : 'text-white/70 hover:text-white hover:bg-white/10'
+                      }`}
+                  >
+                    Nursing
+                  </button>
                 </div>
+
               </div>
 
               <div className="flex flex-col md:flex-row gap-4 mb-8">
@@ -298,7 +373,7 @@ function App() {
                         className="w-full px-4 py-4 bg-white/10 border border-white/20 rounded-xl text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 backdrop-blur-sm appearance-none"
                       >
                         <option value="" className="bg-slate-800">Select Category</option>
-                        {simplifiedCategories.map(category => (
+                        {getCategoryOptions(form.courseType).map(category => (
                           <option key={category.value} value={category.value} className="bg-slate-800">
                             {category.label}
                           </option>
@@ -390,10 +465,18 @@ function App() {
                     </div>
                   </div>
                   <h3 className="text-2xl font-bold text-white mb-4">
-                    Your Engineering Journey Starts Here
+                    Your {form.courseType.toLocaleUpperCase()} Journey Starts Here
                   </h3>
                   <p className="text-purple-200 max-w-md mx-auto text-lg leading-relaxed">
-                    Enter your exam details to discover the perfect engineering colleges tailored to your achievements.
+                    Enter your exam details to discover the perfect {form.courseType.toLocaleUpperCase()} colleges tailored to your achievements.
+                  </p>
+                </div>
+              ) : loading ? (
+                <div className="flex flex-col items-center justify-center py-16">
+                  <Loader2 className="h-12 w-12 text-purple-400 animate-spin mb-6" />
+                  <h3 className="text-2xl font-bold text-white mb-4">Searching Colleges...</h3>
+                  <p className="text-purple-200 max-w-md mx-auto text-lg leading-relaxed">
+                    Please wait while we find the best matches for you.
                   </p>
                 </div>
               ) : results.length === 0 ? (
@@ -413,36 +496,37 @@ function App() {
                 </div>
               ) : (
                 <div className="space-y-4">
-{results.map((college, index) => (
-  <div
-    key={index}
-    className="group bg-white/5 border border-white/10 rounded-xl p-4 sm:p-6 hover:bg-white/10 hover:border-white/20 transition-all duration-300 backdrop-blur-sm transform hover:scale-[1.02]"
-  >
-    <div className="flex items-start space-x-3 sm:space-x-4">
-      <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-500 rounded-lg blur opacity-40 group-hover:opacity-60 transition-opacity"></div>
-        <div className="relative p-2 sm:p-3 bg-white/10 rounded-lg backdrop-blur-sm">
-          <MapPin className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
-        </div>
-      </div>
-      <div className="flex-1">
-        <h3 className="font-semibold sm:font-bold text-white text-base sm:text-lg mb-1 group-hover:text-purple-200 transition-colors leading-snug">
-          {college.college}
-        </h3>
-        <div className="flex items-center space-x-1 sm:space-x-2 text-purple-200 text-sm sm:text-base">
-          <BookOpen className="h-3 w-3 sm:h-4 sm:w-4" />
-          <span className="font-medium">{college.branch}</span>
-        </div>
-      </div>
-      <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-        <div className="p-1 sm:p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg">
-          <Award className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
-        </div>
-      </div>
-    </div>
-  </div>
-))}
-
+                  {results.map((college, index) => (
+                    <div
+                      key={index}
+                      className="group bg-white/5 border border-white/10 rounded-xl p-6 hover:bg-white/10 hover:border-white/20 transition-all duration-300 backdrop-blur-sm transform hover:scale-[1.02]"
+                    >
+                      <div className="flex items-start space-x-4">
+                        <div className="relative">
+                          <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-500 rounded-lg blur opacity-50 group-hover:opacity-75 transition-opacity"></div>
+                          <div className="relative p-3 bg-white/10 rounded-lg backdrop-blur-sm">
+                            <MapPin className="h-6 w-6 text-white" />
+                          </div>
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-bold text-white text-lg mb-2 group-hover:text-purple-200 transition-colors">
+                            {college.college}
+                          </h3>
+                          <div className="flex items-center space-x-2 text-purple-200">
+                            <BookOpen className="h-4 w-4" />
+                            <span className="font-medium">
+                              {form.courseType === 'nursing' ? college.status : college.branch}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg">
+                            <Award className="h-5 w-5 text-white" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
