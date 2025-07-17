@@ -306,8 +306,8 @@ function App() {
                       onChange={(e) => handleInputChange('searchMethod', e.target.value)}
                       className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 backdrop-blur-sm appearance-none"
                     >
-                      <option value="rank" className="bg-slate-800">Merit Rank</option>
                       <option value="percentile" className="bg-slate-800">Percentile</option>
+                      <option value="rank" className="bg-slate-800">Merit Rank</option>
                     </select>
                   </div>
                 </div>
